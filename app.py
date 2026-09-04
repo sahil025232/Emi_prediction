@@ -41,25 +41,52 @@ elif page == "EMI Prediction":
         with st.spinner("Analyzing financial profile..."):
             try:
                 import joblib
+                import pandas as pd
                 
-                # Load the models directly from the files we just created
+                # 1. Load Preprocessors and Models
                 class_model = joblib.load('xgb_class_model.pkl')
                 reg_model = joblib.load('xgb_reg_model.pkl')
+                scaler = joblib.load('scaler.pkl')
                 
+                # 2. Build the Input DataFrame 
+                # IMPORTANT: You must update this dictionary to match the EXACT column names 
+                # and exact number of columns (e.g., 22) that your X_train dataset had!
+                input_data = {
+                    'age': age,
+                    'monthly_salary': salary,
+                    'credit_score': credit_score,
+                    'loan_amount': loan_amount,
+                    # --- ADD YOUR MISSING COLUMNS BELOW WITH DEFAULT VALUES ---
+                    # 'dependents': 2,
+                    # 'existing_loans': 0,
+                    # 'dti_ratio': loan_amount / (salary + 1), # Engineered feature!
+                    # ... add the rest of your X_train columns here ...
+                }
+                
+                input_df = pd.DataFrame([input_data])
+                
+                # 3. Transform and Predict
+                input_scaled = scaler.transform(input_df)
+                
+                is_eligible = class_model.predict(input_scaled)[0]
+                max_emi = reg_model.predict(input_scaled)[0]
+                
+                # 4. Display Live Results!
                 st.write("---")
                 st.subheader("📊 Assessment Results")
                 
-                # Placeholder for final results
-                st.success("✅ **EMI Eligibility:** Eligible")
-                st.info(f"💡 **Maximum Recommended EMI:** 12,500 INR / month")
+                if is_eligible == 1:
+                    st.success("✅ **EMI Eligibility:** Eligible")
+                else:
+                    st.error("❌ **EMI Eligibility:** High Risk - Not Eligible")
+                    
+                st.info(f"💡 **Maximum Recommended EMI:** {max_emi:,.2f} INR / month")
                 
-                st.write("**Note:** Models successfully loaded from files! (Next, we will add the data scaling logic to feed real user inputs to the models).")
-                
-            except FileNotFoundError:
-                st.error("Error: Could not find the model files. Make sure 'xgb_class_model.pkl' and 'xgb_reg_model.pkl' are uploaded to GitHub!")
+            except ValueError as ve:
+                st.error(f"Data Mismatch Error: {ve}")
+                st.warning("Hint: Make sure the 'input_data' dictionary in your code has the exact same columns as your training data!")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
-
 # ==========================================
 # PAGE 3: Admin Dashboard
 # ==========================================
