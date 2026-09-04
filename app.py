@@ -90,11 +90,21 @@ elif page == "EMI Prediction":
                 
                 input_df = pd.DataFrame([input_data])
                 
-                # 3. Transform and Predict
-                input_scaled = scaler.transform(input_df)
+               # 3. Transform and Predict
                 
-                is_eligible = class_model.predict(input_scaled)[0]
-                max_emi = reg_model.predict(input_scaled)[0]
+                # Ask the scaler exactly which columns it was trained on
+                scaler_cols = scaler.feature_names_in_
+                
+                # Scale ONLY those specific columns in our dataframe
+                input_df[scaler_cols] = scaler.transform(input_df[scaler_cols])
+                
+                # Ensure the columns are in the exact order the model expects
+                model_cols = class_model.feature_names_in_
+                input_df = input_df[model_cols]
+                
+                # Make the predictions using the properly formatted dataframe
+                is_eligible = class_model.predict(input_df)[0]
+                max_emi = reg_model.predict(input_df)[0]
                 
                 # 4. Display Live Results!
                 st.write("---")
