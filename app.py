@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import joblib
 
 # Set the configuration for the web page
 st.set_page_config(page_title="EMIPredict AI", layout="wide")
@@ -37,30 +38,54 @@ elif page == "EMI Prediction":
         loan_amount = st.number_input("Requested Loan Amount", min_value=0, value=500000)
         scenario = st.selectbox("EMI Scenario", ["Personal Loan", "Vehicle", "Home Appliances", "Education", "E-commerce"])
     
+    # This button must be indented to stay inside the Page 2 block
     if st.button("Calculate EMI Risk"):
         with st.spinner("Analyzing financial profile..."):
             try:
-                import joblib
-                import pandas as pd
-                
                 # 1. Load Preprocessors and Models
                 class_model = joblib.load('xgb_class_model.pkl')
                 reg_model = joblib.load('xgb_reg_model.pkl')
                 scaler = joblib.load('scaler.pkl')
                 
-                # 2. Build the Input DataFrame 
-                # IMPORTANT: You must update this dictionary to match the EXACT column names 
-                # and exact number of columns (e.g., 22) that your X_train dataset had!
+                # 2. Build the Input DataFrame (All 32 Features)
+                est_rent = salary * 0.20
+                est_expenses = est_rent + 10000
+                est_disposable = salary - est_expenses
+                est_monthly_emi = loan_amount / 60 
+                
                 input_data = {
                     'age': age,
+                    'gender': 0,               
+                    'marital_status': 0,       
+                    'education': 0,            
                     'monthly_salary': salary,
+                    'employment_type': 0,      
+                    'years_of_employment': 3.0,
+                    'company_type': 0,         
+                    'house_type': 0,           
+                    'monthly_rent': est_rent,
+                    'family_size': 3,
+                    'dependents': 2,
+                    'school_fees': 0,
+                    'college_fees': 0,
+                    'travel_expenses': 2000,
+                    'groceries_utilities': 8000,
+                    'other_monthly_expenses': 0,
+                    'existing_loans': 0,
+                    'current_emi_amount': 0,
                     'credit_score': credit_score,
-                    'loan_amount': loan_amount,
-                    # --- ADD YOUR MISSING COLUMNS BELOW WITH DEFAULT VALUES ---
-                    # 'dependents': 2,
-                    # 'existing_loans': 0,
-                    # 'dti_ratio': loan_amount / (salary + 1), # Engineered feature!
-                    # ... add the rest of your X_train columns here ...
+                    'bank_balance': 25000,
+                    'emergency_fund': 10000,
+                    'emi_scenario': 0,         
+                    'requested_amount': loan_amount,
+                    'requested_tenure': 60,
+                    'total_expenses': est_expenses,
+                    'dti_ratio': est_expenses / (salary + 1),
+                    'eti_ratio': est_monthly_emi / (salary + 1),
+                    'disposable_income': est_disposable,
+                    'affordability_ratio': est_disposable / (est_monthly_emi + 1),
+                    'employment_stability_bonus': 1.0,
+                    'custom_risk_score': credit_score * 0.8
                 }
                 
                 input_df = pd.DataFrame([input_data])
@@ -82,11 +107,9 @@ elif page == "EMI Prediction":
                     
                 st.info(f"💡 **Maximum Recommended EMI:** {max_emi:,.2f} INR / month")
                 
-            except ValueError as ve:
-                st.error(f"Data Mismatch Error: {ve}")
-                st.warning("Hint: Make sure the 'input_data' dictionary in your code has the exact same columns as your training data!")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
+
 # ==========================================
 # PAGE 3: Admin Dashboard
 # ==========================================
