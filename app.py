@@ -40,27 +40,25 @@ elif page == "EMI Prediction":
     if st.button("Calculate EMI Risk"):
         with st.spinner("Analyzing financial profile..."):
             try:
-                # 1. Connect to your local MLflow server
-                import mlflow
-                mlflow.set_tracking_uri("http://localhost:5000")
+                import joblib
                 
-                # 2. Load the best models from the registry
-                # (Note: In a fully finished app, you would transform the user inputs here using your saved StandardScaler)
-                class_model = mlflow.xgboost.load_model("models:/EMI_Classification_Model/Latest")
-                reg_model = mlflow.xgboost.load_model("models:/EMI_Regression_Model/Latest")
+                # Load the models directly from the files we just created
+                class_model = joblib.load('xgb_class_model.pkl')
+                reg_model = joblib.load('xgb_reg_model.pkl')
                 
-                # 3. Display the results!
                 st.write("---")
                 st.subheader("📊 Assessment Results")
                 
-                # We will use mock results here temporarily until we add the data scaling logic
+                # Placeholder for final results
                 st.success("✅ **EMI Eligibility:** Eligible")
                 st.info(f"💡 **Maximum Recommended EMI:** 12,500 INR / month")
                 
-                st.write("**Note:** To connect the live model, we must add the StandardScaler and Feature Engineering logic to transform the UI inputs!")
+                st.write("**Note:** Models successfully loaded from files! (Next, we will add the data scaling logic to feed real user inputs to the models).")
                 
+            except FileNotFoundError:
+                st.error("Error: Could not find the model files. Make sure 'xgb_class_model.pkl' and 'xgb_reg_model.pkl' are uploaded to GitHub!")
             except Exception as e:
-                st.error(f"Could not connect to MLflow models. Make sure the MLflow server is running! Error: {e}")
+                st.error(f"An error occurred: {e}")
 
 # ==========================================
 # PAGE 3: Admin Dashboard
